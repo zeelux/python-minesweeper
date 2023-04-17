@@ -82,13 +82,18 @@ class Board:
       self.print_state(True)
       print("GAME OVER! You hit a bomb!")
       return False
-    else:
-      self.board[y][x] = SAFE
-      if (self.count_adjacent_bombs(x, y) == 0):
-        self.reveal_adjacent_squares(x, y)
-      self.print_state()
 
-      return not self.is_game_won()
+    self.board[y][x] = SAFE
+    if (self.count_adjacent_bombs(x, y) == 0):
+      self.reveal_adjacent_squares(x, y)
+    self.print_state()
+
+    is_won = self.is_game_won()
+
+    if (is_won):
+      print("Congratulations! You won!")
+
+    return not is_won
 
   def is_game_won(self):
     for y in range(0, self.size):
