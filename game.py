@@ -16,10 +16,11 @@ class MineSweeperGameUI:
     self.bg_color = (230, 230, 230)
 
     self.is_active = False
+    self.gameBoard = Board(self, 6)
+
     self.play_button = Button(self, "Play")
     self.play_button.command = lambda: self.gameBoard.start_game(3)
-    self.play_button.button_color = (24, 24, 24)
-    self.gameBoard = Board(6)
+    self.play_button.background_color = (24, 24, 24)
 
   def run_game(self):
     while True:
@@ -28,9 +29,7 @@ class MineSweeperGameUI:
           sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
           mouse_pos = pygame.mouse.get_pos()
-          if not self.is_active and self.play_button.rect.collidepoint(mouse_pos):
-            self.is_active = True
-            self.play_button.on_click()
+          self.handle_click(mouse_pos)
 
       self.screen.fill(self.bg_color)
 
@@ -43,7 +42,15 @@ class MineSweeperGameUI:
       self.clock.tick(60)
 
   def render_board(self):
-    pass
+    self.gameBoard.print_state()
+
+  def handle_click(self, mouse_pos):
+    if self.is_active:
+      self.gameBoard.handle_click(mouse_pos)
+    else:
+      if self.play_button.rect.collidepoint(mouse_pos):
+        self.is_active = True
+        self.play_button.on_click()
 
 if __name__ == "__main__":
   game = MineSweeperGameUI()

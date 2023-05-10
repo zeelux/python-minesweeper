@@ -1,4 +1,7 @@
 from random import randint
+import numpy as np
+
+from board_square import BoardSquare
 
 UNKNOWN = 0
 BOMB = 1
@@ -7,8 +10,9 @@ SAFE = 2
 class Board:
   """A class that represents the board of the game."""
 
-  def __init__(self, size = 6) -> None:
+  def __init__(self, game, size = 6) -> None:
     self.size = size
+    self.ms_game = game
 
   def start_game (self, bombs = 3):
     print("Starting game...")
@@ -16,9 +20,24 @@ class Board:
     self._place_bombs(bombs)
     self.print_state()
 
+  def handle_click(self, mouse_pos):
+    for y in range(0, self.size):
+      for x in range(0, self.size):
+        if self.board[y][x].rect.collidepoint(mouse_pos):
+          return self.uncover_square(x, y)
+
   def _clear_board(self):
     print("Creating board...")
-    self.board = [[UNKNOWN] * self.size for i in range(self.size)]
+
+    #self.board = [[UNKNOWN] * self.size for i in range(self.size)]
+
+    self.board = np.array([BoardSquare(
+      self.ms_game,
+      (54 * int(i % self.size)) + 2,
+      (54 * int(i / self.size)) + 2
+    ) for i in range(self.size * self.size)]
+    ).reshape(self.size, self.size)
+
     self.print_state()
 
   def _place_bombs(self, bombs):
@@ -26,11 +45,11 @@ class Board:
       x = randint(0, self.size - 1)
       y = randint(0, self.size - 1)
 
-      while self.board[y][x] == 1:
+      while self.board[y][x].status == BOMB:
         x = randint(0, self.size - 1)
         y = randint(0, self.size - 1)
 
-      self.board[y][x] = 1
+      self.board[y][x].status = BOMB
 
   def print_state(self, is_game_over = False):
     print(chr(27) + "[2J")
@@ -44,12 +63,14 @@ class Board:
     print()
 
   def _print_square(self, x, y, is_game_over):
-    val_at = self.board[y][x]
-    if val_at == UNKNOWN:
+    square = self.board[y][x]
+    square.draw_button()
+
+    if square.status == UNKNOWN:
       print("⬜", end = "")
-    elif val_at == BOMB:
+    elif square.status == BOMB:
       print("💣" if is_game_over else "⬜", end = "")
-    elif val_at == SAFE:
+    elif square.status == SAFE:
       adj_bombs = self.count_adjacent_bombs(x, y)
 
       if (adj_bombs == 0):
@@ -63,7 +84,7 @@ class Board:
     for i in range(-1, 2):
       for j in range(-1, 2):
         if x + i >= 0 and x + i < self.size and y + j >= 0 and y + j < self.size:
-          if self.board[y + j][x + i] == 1:
+          if self.board[y + j][x + i].status == BOMB:
             count += 1
 
     return count
@@ -72,18 +93,18 @@ class Board:
     for i in range(-1, 2):
       for j in range(-1, 2):
         if x + i >= 0 and x + i < self.size and y + j >= 0 and y + j < self.size:
-          if self.board[y + j][x + i] == UNKNOWN:
-            self.board[y + j][x + i] = SAFE
+          if self.board[y + j][x + i].status == UNKNOWN:
+            self.board[y + j][x + i].status = SAFE
             if self.count_adjacent_bombs(x + i, y + j) == 0:
               self.reveal_adjacent_squares(x + i, y + j)
 
   def uncover_square(self, x, y):
-    if self.board[y][x] == BOMB:
+    if self.board[y][x].status == BOMB:
       self.print_state(True)
       print("GAME OVER! You hit a bomb!")
       return False
 
-    self.board[y][x] = SAFE
+    self.board[y][x].status = SAFE
     if (self.count_adjacent_bombs(x, y) == 0):
       self.reveal_adjacent_squares(x, y)
     self.print_state()
@@ -98,10 +119,6 @@ class Board:
   def is_game_won(self):
     for y in range(0, self.size):
       for x in range(0, self.size):
-        if self.board[y][x] == UNKNOWN:
+        if self.board[y][x].status == UNKNOWN:
           return False
     return True
-
-
-b = Board()
-b.start_game()
